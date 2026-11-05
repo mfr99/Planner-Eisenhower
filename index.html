@@ -1,0 +1,350 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>FocusGrid - Eisenhower Daily Planner & Reminders</title>
+  
+  <!-- Mobile & PWA Optimization Tags -->
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="FocusGrid">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#4f46e5">
+
+  <!-- Inline Web App Manifest for Native "Add to Home Screen" -->
+  <link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22FocusGrid%20Eisenhower%20Planner%22%2C%22short_name%22%3A%22FocusGrid%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23f8fafc%22%2C%22theme_color%22%3A%22%234f46e5%22%2C%22icons%22%3A%5B%7B%22src%22%3A%22https%3A%2F%2Fplacehold.co%2F192x192%2F4f46e5%2Fffffff%3Ftext%3DFG%22%2C%22sizes%22%3A%22192x192%22%2C%22type%22%3A%22image%2Fpng%22%7D%2C%7B%22src%22%3A%22https%3A%2F%2Fplacehold.co%2F512x512%2F4f46e5%2Fffffff%3Ftext%3DFG%22%2C%22sizes%22%3A%22512x512%22%2C%22type%22%3A%22image%2Fpng%22%7D%5D%7D">
+
+  <!-- iOS App Icon -->
+  <link rel="apple-touch-icon" href="https://placehold.co/180x180/4f46e5/ffffff?text=FG">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Inter / Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            q1: { light: '#fef2f2', border: '#fca5a5', badge: '#ef4444', text: '#991b1b' },
+            q2: { light: '#eff6ff', border: '#93c5fd', badge: '#3b82f6', text: '#1e40af' },
+            q3: { light: '#fffbeb', border: '#fcd34d', badge: '#f59e0b', text: '#92400e' },
+            q4: { light: '#f1f5f9', border: '#cbd5e1', badge: '#64748b', text: '#334155' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 5px;
+      height: 5px;
+    }
+    .custom-scroll::-webkit-scrollbar-track {
+      background: rgba(0,0,0,0.02);
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: rgba(0,0,0,0.12);
+      border-radius: 999px;
+    }
+    .dragging {
+      opacity: 0.45;
+      transform: scale(0.98);
+    }
+    .drag-over {
+      border: 2px dashed #6366f1 !important;
+      background-color: rgba(99, 102, 241, 0.05) !important;
+    }
+    @keyframes pulseGlow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+      50% { box-shadow: 0 0 0 8px rgba(239, 68, 68, 0); }
+    }
+    .urgent-pulse {
+      animation: pulseGlow 2.5s infinite;
+    }
+    /* Safe Area insets for modern mobile screen notches and navigation bars */
+    .safe-top {
+      padding-top: env(safe-area-inset-top, 0px);
+    }
+    .safe-bottom {
+      padding-bottom: env(safe-area-inset-bottom, 0px);
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col selection:bg-indigo-500 selection:text-white pb-20 md:pb-6">
+
+  <!-- Toast Notification Hub (In-App Floating Alerts) -->
+  <div id="toastContainer" class="fixed top-4 right-4 left-4 sm:left-auto sm:w-96 z-50 flex flex-col gap-2.5 pointer-events-none"></div>
+
+  <!-- Top Navigation Header -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-xs safe-top">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex items-center justify-between gap-2 sm:gap-4">
+      
+      <!-- Brand & Date Selector -->
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center text-white shadow-md shadow-indigo-100 flex-shrink-0">
+          <i class="fa-solid fa-layer-group text-sm"></i>
+        </div>
+        <div>
+          <div class="flex items-center gap-1.5">
+            <h1 class="text-base sm:text-lg font-bold tracking-tight text-slate-900 leading-none">FocusGrid</h1>
+            <span class="text-[10px] font-semibold bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded-full border border-indigo-200/60 uppercase tracking-wider">Eisenhower</span>
+          </div>
+          <div class="flex items-center gap-2 mt-1">
+            <button id="prevDayBtn" class="text-slate-400 hover:text-slate-700 p-1 text-xs" title="Previous Day">
+              <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <input type="date" id="currentDateInput" class="text-xs font-semibold text-slate-600 bg-transparent border-none p-0 focus:ring-0 cursor-pointer hover:text-indigo-600">
+            <button id="nextDayBtn" class="text-slate-400 hover:text-slate-700 p-1 text-xs" title="Next Day">
+              <i class="fa-solid fa-chevron-right"></i>
+            </button>
+            <button id="todayBtn" class="text-[10px] font-bold text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-1.5 py-0.5 rounded">Today</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Action Center -->
+      <div class="flex items-center gap-1.5 sm:gap-2">
+        
+        <!-- Push Notification Toggle -->
+        <button id="notifStatusBtn" class="flex items-center gap-1 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl text-xs font-semibold border transition shadow-xs bg-slate-100 text-slate-600 border-slate-200 hover:bg-slate-200">
+          <i id="notifStatusIcon" class="fa-regular fa-bell"></i>
+          <span id="notifStatusText" class="hidden sm:inline">Enable Alerts</span>
+        </button>
+
+        <!-- Sound Alert Toggle -->
+        <button id="audioMuteBtn" class="p-2 sm:p-2.5 rounded-xl text-xs font-semibold border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition shadow-xs" title="Sound alerts toggle">
+          <i id="audioMuteIcon" class="fa-solid fa-volume-high text-indigo-600"></i>
+        </button>
+
+        <!-- View Switcher (Desktop Header) -->
+        <div class="hidden md:flex bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-medium text-slate-600">
+          <button id="viewMatrixBtn" class="px-3 py-1 rounded-lg bg-white text-slate-800 shadow-xs font-semibold transition">
+            <i class="fa-solid fa-table-cells-large mr-1.5"></i>Matrix
+          </button>
+          <button id="viewTimelineBtn" class="px-3 py-1 rounded-lg hover:text-slate-900 transition">
+            <i class="fa-solid fa-timeline mr-1.5"></i>Schedule
+          </button>
+        </div>
+
+        <!-- AI Assistant Modal Trigger -->
+        <button id="aiSortBtn" class="flex items-center gap-1 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-700 hover:to-indigo-700 text-white text-xs font-semibold shadow-xs transition">
+          <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
+          <span class="hidden sm:inline">AI Sort</span>
+        </button>
+
+        <!-- New Task Button -->
+        <button id="openNewTaskModalBtn" class="flex items-center gap-1 px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-xs transition">
+          <i class="fa-solid fa-plus"></i>
+          <span class="hidden sm:inline">Add Task</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Mobile Bottom Tab Navigation Bar (Visible on mobile only) -->
+  <nav class="md:hidden fixed bottom-0 left-0 right-0 bg-white/95 backdrop-blur-md border-t border-slate-200 z-40 px-6 py-2 flex items-center justify-around safe-bottom shadow-lg">
+    <button id="mobileViewMatrixBtn" class="flex flex-col items-center gap-1 text-indigo-600">
+      <i class="fa-solid fa-table-cells-large text-base"></i>
+      <span class="text-[10px] font-bold">Matrix</span>
+    </button>
+    <button id="mobileAddBtn" class="-mt-5 w-12 h-12 rounded-full bg-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-300 active:scale-95 transition">
+      <i class="fa-solid fa-plus text-lg"></i>
+    </button>
+    <button id="mobileViewTimelineBtn" class="flex flex-col items-center gap-1 text-slate-400">
+      <i class="fa-solid fa-timeline text-base"></i>
+      <span class="text-[10px] font-medium">Schedule</span>
+    </button>
+  </nav>
+
+  <!-- Notification Banner Warning if Blocked/Dismissed -->
+  <div id="notifBanner" class="hidden bg-amber-50 border-b border-amber-200 px-4 py-2.5 text-xs text-amber-800">
+    <div class="max-w-7xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-2">
+        <i class="fa-solid fa-triangle-exclamation text-amber-600 flex-shrink-0"></i>
+        <span>Enable notifications to receive time-based alerts and sound chimes on your phone.</span>
+      </div>
+      <button id="requestPermBannerBtn" class="underline font-bold text-amber-900 hover:text-amber-700 ml-3 whitespace-nowrap">Turn on</button>
+    </div>
+  </div>
+
+  <!-- Main Workspace -->
+  <main class="flex-1 max-w-7xl w-full mx-auto p-3 sm:p-6 lg:p-8 flex flex-col gap-5">
+
+    <!-- Daily Progress & Focus Bar -->
+    <section class="bg-white rounded-2xl border border-slate-200/80 p-4 sm:p-5 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div class="flex items-center gap-3 sm:gap-4">
+        <!-- Progress Ring -->
+        <div class="relative w-12 h-12 flex items-center justify-center flex-shrink-0">
+          <svg class="w-12 h-12 -rotate-90">
+            <circle cx="24" cy="24" r="20" stroke="currentColor" stroke-width="4" class="text-slate-100" fill="transparent" />
+            <circle id="dailyProgressCircle" cx="24" cy="24" r="20" stroke="currentColor" stroke-width="4" class="text-indigo-600 transition-all duration-500" fill="transparent" stroke-dasharray="125.6" stroke-dashoffset="125.6" stroke-linecap="round" />
+          </svg>
+          <span id="progressPercentText" class="absolute text-xs font-bold text-slate-800">0%</span>
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <h2 id="viewDateHeading" class="text-sm sm:text-base font-bold text-slate-900">Today's Focus</h2>
+            <span id="taskCounterBadge" class="text-[11px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 font-semibold">0/0 completed</span>
+          </div>
+          <p id="focusAdviceText" class="text-xs text-slate-500 mt-0.5 leading-snug">Prioritize high-impact items in Q1 and schedule dedicated time for Q2.</p>
+        </div>
+      </div>
+
+      <!-- Quadrant Breakdown Quick Pills -->
+      <div class="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-semibold">
+        <span class="flex items-center gap-1 px-2 py-1 rounded-lg bg-rose-50 text-rose-700 border border-rose-200/60">
+          <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span> Q1: <span id="q1Count">0</span>
+        </span>
+        <span class="flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-50 text-blue-700 border border-blue-200/60">
+          <span class="w-1.5 h-1.5 rounded-full bg-blue-500"></span> Q2: <span id="q2Count">0</span>
+        </span>
+        <span class="flex items-center gap-1 px-2 py-1 rounded-lg bg-amber-50 text-amber-700 border border-amber-200/60">
+          <span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Q3: <span id="q3Count">0</span>
+        </span>
+        <span class="flex items-center gap-1 px-2 py-1 rounded-lg bg-slate-100 text-slate-700 border border-slate-200/60">
+          <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span> Q4: <span id="q4Count">0</span>
+        </span>
+        <button id="testAlarmBtn" class="ml-auto text-[11px] sm:text-xs px-2.5 py-1 rounded-lg text-slate-600 bg-slate-100 hover:bg-slate-200 transition flex items-center gap-1">
+          <i class="fa-solid fa-volume-low text-indigo-500"></i> Test Alert
+        </button>
+      </div>
+    </section>
+
+    <!-- MATRIX VIEW: 2x2 Grid -->
+    <div id="matrixContainer" class="flex flex-col gap-4">
+      
+      <!-- Axis Legend Guide -->
+      <div class="grid grid-cols-2 gap-3 text-center">
+        <div class="text-[11px] font-bold tracking-wider uppercase text-rose-700 bg-rose-50/70 py-1.5 rounded-xl border border-rose-100 flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-fire text-rose-500"></i> Urgent (Now)
+        </div>
+        <div class="text-[11px] font-bold tracking-wider uppercase text-blue-700 bg-blue-50/70 py-1.5 rounded-xl border border-blue-100 flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-calendar text-blue-500"></i> Not Urgent (Later)
+        </div>
+      </div>
+
+      <!-- The 4 Quadrants Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        
+        <!-- QUADRANT 1: DO FIRST -->
+        <div data-quadrant="q1" class="quadrant-card bg-white rounded-2xl border-2 border-rose-200 p-3.5 sm:p-5 flex flex-col shadow-xs">
+          <div class="flex items-center justify-between pb-2.5 border-b border-rose-100 mb-2.5">
+            <div class="flex items-center gap-2">
+              <span class="w-6 h-6 rounded-lg bg-rose-500 text-white flex items-center justify-center text-xs font-bold">Q1</span>
+              <div>
+                <h3 class="text-xs sm:text-sm font-bold text-slate-900 leading-tight">Do First</h3>
+                <p class="text-[10px] sm:text-[11px] font-medium text-rose-600">Urgent & Important (Crises / Deadlines)</p>
+              </div>
+            </div>
+            <button onclick="openNewTaskModal('q1')" class="text-xs text-rose-600 hover:text-rose-800 bg-rose-50 hover:bg-rose-100 p-1.5 rounded-lg">
+              <i class="fa-solid fa-plus"></i>
+            </button>
+          </div>
+          <div id="list-q1" data-quadrant="q1" class="task-list flex-1 flex flex-col gap-2 min-h-[140px] custom-scroll overflow-y-auto max-h-[380px] p-1 rounded-xl"></div>
+        </div>
+
+        <!-- QUADRANT 2: SCHEDULE -->
+        <div data-quadrant="q2" class="quadrant-card bg-white rounded-2xl border-2 border-blue-200 p-3.5 sm:p-5 flex flex-col shadow-xs">
+          <div class="flex items-center justify-between pb-2.5 border-b border-blue-100 mb-2.5">
+            <div class="flex items-center gap-2">
+              <span class="w-6 h-6 rounded-lg bg-blue-500 text-white flex items-center justify-center text-xs font-bold">Q2</span>
+              <div>
+                <h3 class="text-xs sm:text-sm font-bold text-slate-900 leading-tight">Schedule & Focus</h3>
+                <p class="text-[10px] sm:text-[11px] font-medium text-blue-600">Not Urgent, but Important (Goals)</p>
+              </div>
+            </div>
+            <button onclick="openNewTaskModal('q2')" class="text-xs text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 p-1.5 rounded-lg">
+              <i class="fa-solid fa-plus"></i>
+            </button>
+          </div>
+          <div id="list-q2" data-quadrant="q2" class="task-list flex-1 flex flex-col gap-2 min-h-[140px] custom-scroll overflow-y-auto max-h-[380px] p-1 rounded-xl"></div>
+        </div>
+
+        <!-- QUADRANT 3: DELEGATE -->
+        <div data-quadrant="q3" class="quadrant-card bg-white rounded-2xl border-2 border-amber-200 p-3.5 sm:p-5 flex flex-col shadow-xs">
+          <div class="flex items-center justify-between pb-2.5 border-b border-amber-100 mb-2.5">
+            <div class="flex items-center gap-2">
+              <span class="w-6 h-6 rounded-lg bg-amber-500 text-white flex items-center justify-center text-xs font-bold">Q3</span>
+              <div>
+                <h3 class="text-xs sm:text-sm font-bold text-slate-900 leading-tight">Delegate / Minimize</h3>
+                <p class="text-[10px] sm:text-[11px] font-medium text-amber-600">Urgent, Not Important (Interrupts)</p>
+              </div>
+            </div>
+            <button onclick="openNewTaskModal('q3')" class="text-xs text-amber-600 hover:text-amber-800 bg-amber-50 hover:bg-amber-100 p-1.5 rounded-lg">
+              <i class="fa-solid fa-plus"></i>
+            </button>
+          </div>
+          <div id="list-q3" data-quadrant="q3" class="task-list flex-1 flex flex-col gap-2 min-h-[140px] custom-scroll overflow-y-auto max-h-[380px] p-1 rounded-xl"></div>
+        </div>
+
+        <!-- QUADRANT 4: ELIMINATE -->
+        <div data-quadrant="q4" class="quadrant-card bg-white rounded-2xl border-2 border-slate-200 p-3.5 sm:p-5 flex flex-col shadow-xs">
+          <div class="flex items-center justify-between pb-2.5 border-b border-slate-100 mb-2.5">
+            <div class="flex items-center gap-2">
+              <span class="w-6 h-6 rounded-lg bg-slate-500 text-white flex items-center justify-center text-xs font-bold">Q4</span>
+              <div>
+                <h3 class="text-xs sm:text-sm font-bold text-slate-900 leading-tight">Eliminate / Drop</h3>
+                <p class="text-[10px] sm:text-[11px] font-medium text-slate-500">Not Urgent & Not Important (Time Wasters)</p>
+              </div>
+            </div>
+            <button onclick="openNewTaskModal('q4')" class="text-xs text-slate-600 hover:text-slate-800 bg-slate-100 hover:bg-slate-200 p-1.5 rounded-lg">
+              <i class="fa-solid fa-plus"></i>
+            </button>
+          </div>
+          <div id="list-q4" data-quadrant="q4" class="task-list flex-1 flex flex-col gap-2 min-h-[140px] custom-scroll overflow-y-auto max-h-[380px] p-1 rounded-xl"></div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TIMELINE SCHEDULE VIEW -->
+    <div id="timelineContainer" class="hidden bg-white rounded-2xl border border-slate-200 p-4 sm:p-6 shadow-xs">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-5">
+        <div>
+          <h3 class="text-sm sm:text-base font-bold text-slate-900">Today's Chronological Schedule</h3>
+          <p class="text-xs text-slate-500">Ordered by notification and due times</p>
+        </div>
+        <button id="backToMatrixBtn" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-2.5 py-1.5 rounded-lg">
+          <i class="fa-solid fa-arrow-left mr-1"></i> Matrix
+        </button>
+      </div>
+
+      <div id="timelineList" class="relative pl-6 space-y-4 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
+        <!-- Dynamically rendered timeline items -->
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ADD / EDIT TASK MODAL -->
+  <div id="taskModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs hidden">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto custom-scroll">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+        <h3 id="modalTitle" class="text-sm sm:text-base font-bold text-slate-900">Add New Task</h3>
+        <button id="closeModalBtn" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <form id="taskForm" class="space-y-4">
+        <input type="hidden" id="editTaskId" value="">
+
+        <!-- Title -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 upperca
