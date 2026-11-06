@@ -315,4 +315,1302 @@
 
     <!-- TIMELINE SCHEDULE VIEW -->
     <div id="timelineContainer" class="hidden bg-white rounded-2xl border border-slate-200 p-4 sm:p-6 shadow-xs">
-      <div class="flex
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-5">
+        <div>
+          <h3 class="text-sm sm:text-base font-bold text-slate-900">Today's Chronological Schedule</h3>
+          <p class="text-xs text-slate-500">Ordered by notification and due times</p>
+        </div>
+        <button id="backToMatrixBtn" class="text-xs font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 px-2.5 py-1.5 rounded-lg">
+          <i class="fa-solid fa-arrow-left mr-1"></i> Matrix
+        </button>
+      </div>
+
+      <div id="timelineList" class="relative pl-6 space-y-4 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
+        <!-- Dynamically rendered timeline items -->
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ADD / EDIT TASK MODAL -->
+  <div id="taskModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs hidden">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto custom-scroll">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+        <h3 id="modalTitle" class="text-sm sm:text-base font-bold text-slate-900">Add New Task</h3>
+        <button id="closeModalBtn" onclick="closeTaskModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <form id="taskForm" class="space-y-4">
+        <input type="hidden" id="editTaskId" value="">
+
+        <!-- Title -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Task Title <span class="text-rose-500">*</span></label>
+          <input type="text" id="taskTitleInput" required placeholder="e.g., Finalize budget proposal" class="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium">
+        </div>
+
+        <!-- Quadrant Selector -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1.5">Eisenhower Quadrant</label>
+          <div class="grid grid-cols-2 gap-2">
+            <label class="cursor-pointer">
+              <input type="radio" name="quadrantRadio" value="q1" class="peer sr-only">
+              <div class="p-2 sm:p-2.5 rounded-xl border border-rose-200 bg-rose-50/40 peer-checked:bg-rose-100 peer-checked:border-rose-500 peer-checked:ring-1 peer-checked:ring-rose-500 transition text-[11px] sm:text-xs font-semibold text-rose-900 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                <span>Q1: Urgent (Do)</span>
+              </div>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="quadrantRadio" value="q2" checked class="peer sr-only">
+              <div class="p-2 sm:p-2.5 rounded-xl border border-blue-200 bg-blue-50/40 peer-checked:bg-blue-100 peer-checked:border-blue-500 peer-checked:ring-1 peer-checked:ring-blue-500 transition text-[11px] sm:text-xs font-semibold text-blue-900 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-blue-500"></span>
+                <span>Q2: Focus (Plan)</span>
+              </div>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="quadrantRadio" value="q3" class="peer sr-only">
+              <div class="p-2 sm:p-2.5 rounded-xl border border-amber-200 bg-amber-50/40 peer-checked:bg-amber-100 peer-checked:border-amber-500 peer-checked:ring-1 peer-checked:ring-amber-500 transition text-[11px] sm:text-xs font-semibold text-amber-900 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                <span>Q3: Delegate</span>
+              </div>
+            </label>
+            <label class="cursor-pointer">
+              <input type="radio" name="quadrantRadio" value="q4" class="peer sr-only">
+              <div class="p-2 sm:p-2.5 rounded-xl border border-slate-200 bg-slate-50 peer-checked:bg-slate-200 peer-checked:border-slate-500 peer-checked:ring-1 peer-checked:ring-slate-500 transition text-[11px] sm:text-xs font-semibold text-slate-800 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+                <span>Q4: Eliminate</span>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Date & Time -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Scheduled Date</label>
+            <input type="date" id="taskDateInput" class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-medium">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Due / Alert Time</label>
+            <input type="time" id="taskTimeInput" class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-medium">
+          </div>
+        </div>
+
+        <!-- Notification Trigger Option -->
+        <div class="bg-indigo-50/60 p-3 rounded-xl border border-indigo-100 space-y-2">
+          <div class="flex items-center justify-between">
+            <label for="taskReminderToggle" class="text-xs font-bold text-indigo-900 flex items-center gap-1.5 cursor-pointer">
+              <i class="fa-solid fa-bell text-indigo-600"></i>
+              <span>Send Mobile & Audio Alert</span>
+            </label>
+            <input type="checkbox" id="taskReminderToggle" checked class="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500 cursor-pointer">
+          </div>
+          <div id="reminderOffsetContainer" class="flex items-center gap-2 pt-1 text-xs text-slate-600">
+            <span>Notify:</span>
+            <select id="reminderOffsetSelect" class="bg-white border border-slate-200 rounded-lg px-2 py-1 text-xs font-medium focus:ring-1 focus:ring-indigo-500">
+              <option value="0">At exact time</option>
+              <option value="5">5 minutes before</option>
+              <option value="15">15 minutes before</option>
+              <option value="30">30 minutes before</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Notes / Action Details</label>
+          <textarea id="taskNotesInput" rows="2" placeholder="Optional notes or details..." class="w-full px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-xs font-medium"></textarea>
+        </div>
+
+        <!-- Modal Actions -->
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+          <button type="button" id="cancelModalBtn" onclick="closeTaskModal()" class="px-3.5 py-2 rounded-xl border border-slate-300 text-slate-700 text-xs font-semibold hover:bg-slate-50">Cancel</button>
+          <button type="submit" id="saveTaskSubmitBtn" class="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold shadow-xs">Save Task</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- AI PRIORITIZER MODAL -->
+  <div id="aiModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs hidden">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-5 sm:p-6 shadow-2xl border border-slate-100">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
+        <div class="flex items-center gap-2">
+          <div class="w-7 h-7 rounded-lg bg-violet-100 text-violet-700 flex items-center justify-center text-xs">
+            <i class="fa-solid fa-wand-magic-sparkles"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-slate-900">AI Task Classifier</h3>
+            <p class="text-[10px] text-slate-500">Describe your task; AI sorts urgency & time.</p>
+          </div>
+        </div>
+        <button id="closeAiModalBtn" onclick="closeAiModal()" class="text-slate-400 hover:text-slate-600 p-1">
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+
+      <div class="space-y-4">
+        <div>
+          <textarea id="aiPromptInput" rows="3" placeholder="e.g. 'Submit critical payroll report by 3pm today'" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-violet-500 text-xs font-medium"></textarea>
+        </div>
+
+        <div id="aiLoadingIndicator" class="hidden flex items-center justify-center gap-2 py-3 text-xs font-semibold text-violet-600">
+          <i class="fa-solid fa-circle-notch fa-spin text-base"></i>
+          <span>Classifying task...</span>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+          <button type="button" id="aiCancelBtn" onclick="closeAiModal()" class="px-3.5 py-2 rounded-xl border border-slate-300 text-slate-700 text-xs font-semibold hover:bg-slate-50">Cancel</button>
+          <button type="button" id="aiAnalyzeBtn" onclick="handleAiPrioritize()" class="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-700 text-white text-xs font-semibold flex items-center gap-1.5">
+            <i class="fa-solid fa-bolt"></i> Classify & Add
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT LOGIC -->
+  <script>
+    const STORAGE_KEY = 'focusgrid_eisenhower_tasks_v2';
+    const SETTINGS_KEY = 'focusgrid_eisenhower_settings_v2';
+
+    let state = {
+      selectedDate: getTodayString(),
+      tasks: [],
+      soundEnabled: true,
+      activeView: 'matrix',
+    };
+
+    function formatDateToYMD(date) {
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    }
+
+    function getTodayString() {
+      return formatDateToYMD(new Date());
+    }
+
+    function changeDate(offsetDays) {
+      try {
+        const parts = state.selectedDate.split('-').map(Number);
+        const d = new Date(parts[0], parts[1] - 1, parts[2]);
+        d.setDate(d.getDate() + offsetDays);
+        state.selectedDate = formatDateToYMD(d);
+        renderAll();
+      } catch (err) {
+        state.selectedDate = getTodayString();
+        renderAll();
+      }
+    }
+
+    function setToday() {
+      state.selectedDate = getTodayString();
+      renderAll();
+    }
+
+    function loadStorage() {
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          state.tasks = JSON.parse(saved);
+        } else {
+          state.tasks = [
+            {
+              id: 'init-1',
+              title: 'Server downtime incident investigation',
+              quadrant: 'q1',
+              date: getTodayString(),
+              time: '11:00',
+              reminder: true,
+              reminderOffset: 0,
+              completed: false,
+              notified: false,
+              notes: 'Check AWS cloudwatch logs immediately'
+            },
+            {
+              id: 'init-2',
+              title: 'Quarterly career roadmapping & skill upgrade',
+              quadrant: 'q2',
+              date: getTodayString(),
+              time: '14:30',
+              reminder: true,
+              reminderOffset: 15,
+              completed: false,
+              notified: false,
+              notes: 'Strategic planning & leadership review'
+            },
+            {
+              id: 'init-3',
+              title: 'Respond to vendor cold sales inquiries',
+              quadrant: 'q3',
+              date: getTodayString(),
+              time: '16:00',
+              reminder: false,
+              reminderOffset: 0,
+              completed: false,
+              notified: false,
+              notes: 'Forward or template reply'
+            },
+            {
+              id: 'init-4',
+              title: 'Browse random news and social media',
+              quadrant: 'q4',
+              date: getTodayString(),
+              time: '',
+              reminder: false,
+              reminderOffset: 0,
+              completed: true,
+              notified: false,
+              notes: 'Eliminated to stay focused'
+            }
+          ];
+          saveStorage();
+        }
+
+        const savedSettings = localStorage.getItem(SETTINGS_KEY);
+        if (savedSettings) {
+          const parsed = JSON.parse(savedSettings);
+          state.soundEnabled = parsed.soundEnabled ?? true;
+        }
+      } catch (err) {
+        console.error('Failed to load storage:', err);
+      }
+    }
+
+    function saveStorage() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state.tasks));
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify({ soundEnabled: state.soundEnabled }));
+      } catch (e) {
+        console.error('Could not save to storage', e);
+      }
+    }
+
+    function formatTimeDisplay(timeStr) {
+      if (!timeStr) return '';
+      const [h, m] = timeStr.split(':');
+      let hours = parseInt(h, 10);
+      const minutes = m || '00';
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      hours = hours % 12;
+      hours = hours ? hours : 12;
+      return `${hours}:${minutes} ${ampm}`;
+    }
+
+    /* Web Audio API Synthesizer with In-Memory HTML5 Audio Fallback */
+    let audioCtx = null;
+    let fallbackWavUrl = null;
+
+    function unlockAudio() {
+      try {
+        if (!audioCtx) {
+          const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+          if (AudioContextClass) audioCtx = new AudioContextClass();
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume().catch(() => {});
+        }
+      } catch (e) {}
+    }
+
+    function getFallbackWavUrl() {
+      if (fallbackWavUrl) return fallbackWavUrl;
+      try {
+        const sampleRate = 16000;
+        const duration = 0.45;
+        const numSamples = Math.floor(sampleRate * duration);
+        const buffer = new ArrayBuffer(44 + numSamples * 2);
+        const view = new DataView(buffer);
+
+        const writeString = (offset, str) => {
+          for (let i = 0; i < str.length; i++) view.setUint8(offset + i, str.charCodeAt(i));
+        };
+        writeString(0, 'RIFF');
+        view.setUint32(4, 36 + numSamples * 2, true);
+        writeString(8, 'WAVE');
+        writeString(12, 'fmt ');
+        view.setUint32(16, 16, true);
+        view.setUint16(20, 1, true);
+        view.setUint16(22, 1, true);
+        view.setUint32(24, sampleRate, true);
+        view.setUint32(28, sampleRate * 2, true);
+        view.setUint16(32, 2, true);
+        view.setUint16(34, 16, true);
+        writeString(36, 'data');
+        view.setUint32(40, numSamples * 2, true);
+
+        for (let i = 0; i < numSamples; i++) {
+          const t = i / sampleRate;
+          const env = Math.exp(-t * 8);
+          const s = (Math.sin(2 * Math.PI * 659.25 * t) + 0.6 * Math.sin(2 * Math.PI * 987.77 * t)) * env * 0.3;
+          const sample = Math.max(-1, Math.min(1, s));
+          view.setInt16(44 + i * 2, sample < 0 ? sample * 0x8000 : sample * 0x7FFF, true);
+        }
+
+        const blob = new Blob([buffer], { type: 'audio/wav' });
+        fallbackWavUrl = URL.createObjectURL(blob);
+        return fallbackWavUrl;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    async function playNotificationChime() {
+      if (!state.soundEnabled) return;
+      try {
+        unlockAudio();
+        if (audioCtx) {
+          if (audioCtx.state === 'suspended') {
+            await audioCtx.resume();
+          }
+          const now = audioCtx.currentTime;
+          const notes = [
+            { freq: 659.25, time: 0.0, dur: 0.2 },
+            { freq: 880.00, time: 0.1, dur: 0.25 },
+            { freq: 1046.50, time: 0.22, dur: 0.45 }
+          ];
+
+          notes.forEach(n => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(n.freq, now + n.time);
+            gain.gain.setValueAtTime(0.001, now + n.time);
+            gain.gain.exponentialRampToValueAtTime(0.28, now + n.time + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.0001, now + n.time + n.dur);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(now + n.time);
+            osc.stop(now + n.time + n.dur + 0.02);
+          });
+          return;
+        }
+      } catch (err) {
+        console.warn('Web Audio chime issue, using fallback:', err);
+      }
+
+      // In-Memory HTML5 Audio fallback
+      try {
+        const url = getFallbackWavUrl();
+        if (url) {
+          const a = new Audio(url);
+          a.volume = 0.5;
+          a.play().catch(() => {});
+        }
+      } catch (e) {}
+    }
+
+    function toggleSound() {
+      unlockAudio();
+      state.soundEnabled = !state.soundEnabled;
+      const audioMuteIcon = document.getElementById('audioMuteIcon');
+      if (state.soundEnabled) {
+        if (audioMuteIcon) audioMuteIcon.className = 'fa-solid fa-volume-high text-indigo-600';
+        playNotificationChime();
+        showToast('Sound Enabled', 'Notification audio chime is active.', 'emerald');
+      } else {
+        if (audioMuteIcon) audioMuteIcon.className = 'fa-solid fa-volume-xmark text-slate-400';
+        showToast('Sound Muted', 'Audio alerts silenced.', 'slate');
+      }
+      saveStorage();
+    }
+
+    function testNotificationAlert() {
+      unlockAudio();
+      playNotificationChime();
+      showNativeNotification('Test Alert', {
+        body: 'FocusGrid audio chime and notification fired successfully!',
+        icon: 'https://placehold.co/128x128/4f46e5/ffffff?text=TEST'
+      });
+      showToast('Test Alert Triggered', 'Audio chime and notification alert active.', 'indigo');
+    }
+
+    /* Notifications */
+    function checkNotificationPermission() {
+      if (!('Notification' in window)) {
+        updateNotifStatusUI('unsupported');
+        return;
+      }
+      try {
+        if (Notification.permission === 'granted') {
+          updateNotifStatusUI('granted');
+        } else if (Notification.permission === 'denied') {
+          updateNotifStatusUI('denied');
+        } else {
+          updateNotifStatusUI('default');
+        }
+      } catch (e) {
+        updateNotifStatusUI('default');
+      }
+    }
+
+    function updateNotifStatusUI(status) {
+      const btn = document.getElementById('notifStatusBtn');
+      const icon = document.getElementById('notifStatusIcon');
+      const text = document.getElementById('notifStatusText');
+      const banner = document.getElementById('notifBanner');
+
+      if (!btn || !icon || !text) return;
+
+      if (status === 'granted') {
+        btn.className = 'flex items-center gap-1 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl text-xs font-semibold border transition shadow-xs bg-emerald-50 text-emerald-700 border-emerald-200';
+        icon.className = 'fa-solid fa-bell text-emerald-600';
+        text.textContent = 'Alerts On';
+        if (banner) banner.classList.add('hidden');
+      } else if (status === 'denied') {
+        btn.className = 'flex items-center gap-1 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl text-xs font-semibold border transition shadow-xs bg-rose-50 text-rose-700 border-rose-200';
+        icon.className = 'fa-solid fa-bell-slash text-rose-600';
+        text.textContent = 'Blocked';
+        if (banner) banner.classList.remove('hidden');
+      } else {
+        btn.className = 'flex items-center gap-1 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl text-xs font-semibold border transition shadow-xs bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100';
+        icon.className = 'fa-regular fa-bell text-amber-700';
+        text.textContent = 'Enable';
+        if (banner) banner.classList.add('hidden');
+      }
+    }
+
+    async function requestNotificationPermission() {
+      unlockAudio();
+      if (!('Notification' in window)) {
+        showToast('Browser Notifications Not Supported', 'Your browser does not support system push alerts, but in-app sound and toasts will trigger.', 'amber');
+        return;
+      }
+
+      try {
+        let permission;
+        try {
+          permission = await Notification.requestPermission();
+        } catch (e) {
+          permission = await new Promise(resolve => Notification.requestPermission(resolve));
+        }
+
+        if (permission === 'granted') {
+          updateNotifStatusUI('granted');
+          playNotificationChime();
+          showNativeNotification('Notifications Active', {
+            body: 'FocusGrid alerts are armed for your scheduled tasks!',
+            icon: 'https://placehold.co/128x128/4f46e5/ffffff?text=FG'
+          });
+          showToast('Notifications Activated', 'Alerts will fire precisely when scheduled.', 'emerald');
+        } else {
+          updateNotifStatusUI('denied');
+          showToast('Notification Blocked', 'Check browser settings to allow notifications.', 'rose');
+        }
+      } catch (err) {
+        console.error('Error requesting permission', err);
+      }
+    }
+
+    function showNativeNotification(title, options = {}) {
+      if ('Notification' in window && Notification.permission === 'granted') {
+        try {
+          new Notification(title, options);
+        } catch (e) {
+          console.warn('Native notification instantiation error:', e);
+        }
+      }
+    }
+
+    function showToast(title, message, tone = 'indigo', actionTask = null) {
+      const container = document.getElementById('toastContainer');
+      if (!container) return;
+      const toast = document.createElement('div');
+      
+      const toneMap = {
+        emerald: { bg: 'bg-emerald-50', border: 'border-emerald-200', text: 'text-emerald-900', icon: 'fa-check text-emerald-600' },
+        rose: { bg: 'bg-rose-50', border: 'border-rose-200', text: 'text-rose-900', icon: 'fa-bell text-rose-600' },
+        amber: { bg: 'bg-amber-50', border: 'border-amber-200', text: 'text-amber-900', icon: 'fa-triangle-exclamation text-amber-600' },
+        indigo: { bg: 'bg-indigo-50', border: 'border-indigo-200', text: 'text-indigo-900', icon: 'fa-circle-info text-indigo-600' },
+        slate: { bg: 'bg-slate-100', border: 'border-slate-300', text: 'text-slate-800', icon: 'fa-circle-info text-slate-500' }
+      };
+
+      const style = toneMap[tone] || toneMap.indigo;
+      toast.className = `${style.bg} ${style.border} ${style.text} pointer-events-auto border rounded-2xl p-3 sm:p-4 shadow-xl flex items-start gap-2.5 transition-all transform duration-300 translate-y-2 opacity-0`;
+
+      let actionHtml = '';
+      if (actionTask) {
+        actionHtml = `
+          <div class="mt-2 flex items-center gap-2">
+            <button onclick="markTaskDoneFromToast('${actionTask.id}', this)" class="text-[11px] font-bold px-2.5 py-1 rounded-lg bg-indigo-600 text-white">
+              Mark Complete
+            </button>
+            <button onclick="snoozeTask('${actionTask.id}', 10, this)" class="text-[11px] font-semibold px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-slate-700">
+              Snooze 10m
+            </button>
+          </div>
+        `;
+      }
+
+      toast.innerHTML = `
+        <div class="w-6 h-6 rounded-lg bg-white shadow-xs flex items-center justify-center flex-shrink-0 mt-0.5">
+          <i class="fa-solid ${style.icon} text-xs"></i>
+        </div>
+        <div class="flex-1">
+          <div class="flex items-center justify-between">
+            <h4 class="text-xs font-bold leading-tight">${title}</h4>
+            <button onclick="this.closest('.pointer-events-auto').remove()" class="text-slate-400 hover:text-slate-600 text-xs p-1">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+          <p class="text-[11px] text-slate-600 mt-0.5 leading-normal">${message}</p>
+          ${actionHtml}
+        </div>
+      `;
+
+      container.appendChild(toast);
+      requestAnimationFrame(() => toast.classList.remove('translate-y-2', 'opacity-0'));
+
+      if (!actionTask) {
+        setTimeout(() => {
+          toast.classList.add('opacity-0', 'translate-x-4');
+          setTimeout(() => toast.remove(), 300);
+        }, 5000);
+      }
+    }
+
+    function markTaskDoneFromToast(taskId, btn) {
+      toggleTaskCompletion(taskId);
+      const toast = btn.closest('.pointer-events-auto');
+      if (toast) toast.remove();
+    }
+
+    function snoozeTask(taskId, minutes, btn) {
+      const task = state.tasks.find(t => t.id === taskId);
+      if (task) {
+        const now = new Date();
+        now.setMinutes(now.getMinutes() + minutes);
+        const hh = String(now.getHours()).padStart(2, '0');
+        const mm = String(now.getMinutes()).padStart(2, '0');
+        task.time = `${hh}:${mm}`;
+        task.notified = false;
+        saveStorage();
+        renderAll();
+        showToast('Task Snoozed', `Alert rescheduled for ${formatTimeDisplay(task.time)}`, 'indigo');
+      }
+      const toast = btn.closest('.pointer-events-auto');
+      if (toast) toast.remove();
+    }
+
+    /* Background Scheduler Check */
+    function checkScheduledTasks() {
+      const now = new Date();
+      const currentDateStr = getTodayString();
+      const currentHours = now.getHours();
+      const currentMinutes = now.getMinutes();
+      const currentTotalMinutes = currentHours * 60 + currentMinutes;
+
+      state.tasks.forEach(task => {
+        if (task.date === currentDateStr && !task.completed && task.reminder && !task.notified && task.time) {
+          const [th, tm] = task.time.split(':').map(Number);
+          const taskTotalMinutes = th * 60 + tm;
+          const offset = parseInt(task.reminderOffset || 0, 10);
+          const targetTriggerMinutes = taskTotalMinutes - offset;
+
+          if (currentTotalMinutes >= targetTriggerMinutes && currentTotalMinutes <= targetTriggerMinutes + 5) {
+            triggerTaskNotification(task);
+            task.notified = true;
+            saveStorage();
+          }
+        }
+      });
+    }
+
+    function triggerTaskNotification(task) {
+      const quadrantLabels = {
+        q1: 'Q1: DO FIRST (Urgent)',
+        q2: 'Q2: SCHEDULE',
+        q3: 'Q3: DELEGATE',
+        q4: 'Q4: ELIMINATE'
+      };
+
+      const title = `Reminder: ${task.title}`;
+      const body = `Due: ${formatTimeDisplay(task.time)} [${quadrantLabels[task.quadrant] || 'Task'}]`;
+
+      playNotificationChime();
+
+      showNativeNotification(title, {
+        body: body,
+        icon: 'https://placehold.co/128x128/ef4444/ffffff?text=ALERT',
+        tag: task.id,
+        requireInteraction: true
+      });
+
+      showToast(title, body, task.quadrant === 'q1' ? 'rose' : 'indigo', task);
+    }
+
+    setInterval(checkScheduledTasks, 10000);
+
+    /* CRUD & Drag & Drop */
+    function addTask(taskData) {
+      const newTask = {
+        id: 'task_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+        title: taskData.title,
+        quadrant: taskData.quadrant || 'q2',
+        date: taskData.date || state.selectedDate,
+        time: taskData.time || '',
+        reminder: taskData.reminder ?? true,
+        reminderOffset: taskData.reminderOffset ?? 0,
+        completed: false,
+        notified: false,
+        notes: taskData.notes || ''
+      };
+      state.tasks.unshift(newTask);
+      saveStorage();
+      renderAll();
+      showToast('Task Added', `Added to ${newTask.quadrant.toUpperCase()}`, 'emerald');
+    }
+
+    function updateTask(id, taskData) {
+      const idx = state.tasks.findIndex(t => t.id === id);
+      if (idx !== -1) {
+        state.tasks[idx] = {
+          ...state.tasks[idx],
+          ...taskData,
+          notified: (taskData.time !== state.tasks[idx].time || taskData.date !== state.tasks[idx].date) ? false : state.tasks[idx].notified
+        };
+        saveStorage();
+        renderAll();
+        showToast('Task Updated', 'Changes saved', 'indigo');
+      }
+    }
+
+    function deleteTask(id) {
+      state.tasks = state.tasks.filter(t => t.id !== id);
+      saveStorage();
+      renderAll();
+      showToast('Task Removed', 'Task deleted', 'slate');
+    }
+
+    function toggleTaskCompletion(id) {
+      const task = state.tasks.find(t => t.id === id);
+      if (task) {
+        task.completed = !task.completed;
+        saveStorage();
+        renderAll();
+        if (task.completed) playNotificationChime();
+      }
+    }
+
+    function moveTaskToQuadrant(taskId, newQuadrant) {
+      const task = state.tasks.find(t => t.id === taskId);
+      if (task && task.quadrant !== newQuadrant) {
+        task.quadrant = newQuadrant;
+        saveStorage();
+        renderAll();
+      }
+    }
+
+    let draggedTaskId = null;
+    function handleDragStart(e) {
+      draggedTaskId = this.getAttribute('data-id');
+      this.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', draggedTaskId);
+    }
+
+    function handleDragEnd() {
+      this.classList.remove('dragging');
+      document.querySelectorAll('.task-list').forEach(list => list.classList.remove('drag-over'));
+      draggedTaskId = null;
+    }
+
+    function initDropZones() {
+      const lists = document.querySelectorAll('.task-list');
+      lists.forEach(list => {
+        list.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          e.dataTransfer.dropEffect = 'move';
+          list.classList.add('drag-over');
+        });
+        list.addEventListener('dragleave', (e) => {
+          if (!list.contains(e.relatedTarget)) {
+            list.classList.remove('drag-over');
+          }
+        });
+        list.addEventListener('drop', (e) => {
+          e.preventDefault();
+          list.classList.remove('drag-over');
+          const targetQuadrant = list.getAttribute('data-quadrant');
+          if (draggedTaskId && targetQuadrant) {
+            moveTaskToQuadrant(draggedTaskId, targetQuadrant);
+          }
+        });
+      });
+    }
+
+    /* Rendering */
+    function renderAll() {
+      renderDateHeader();
+      renderMatrix();
+      renderTimeline();
+      renderProgressStats();
+    }
+
+    function renderDateHeader() {
+      const dateInput = document.getElementById('currentDateInput');
+      if (dateInput) dateInput.value = state.selectedDate;
+
+      const heading = document.getElementById('viewDateHeading');
+      if (heading) {
+        try {
+          const parts = state.selectedDate.split('-');
+          const d = new Date(parts[0], parts[1] - 1, parts[2]);
+          const options = { weekday: 'short', month: 'short', day: 'numeric' };
+          const formatted = d.toLocaleDateString(undefined, options);
+          const isToday = state.selectedDate === getTodayString();
+          heading.textContent = isToday ? `Today (${formatted})` : formatted;
+        } catch (e) {
+          heading.textContent = state.selectedDate;
+        }
+      }
+    }
+
+    function renderProgressStats() {
+      const dayTasks = state.tasks.filter(t => t.date === state.selectedDate);
+      const total = dayTasks.length;
+      const completed = dayTasks.filter(t => t.completed).length;
+      const percent = total === 0 ? 0 : Math.round((completed / total) * 100);
+
+      const circumference = 125.6;
+      const offset = circumference - (percent / 100) * circumference;
+      const circle = document.getElementById('dailyProgressCircle');
+      if (circle) circle.style.strokeDashoffset = offset;
+
+      const percentText = document.getElementById('progressPercentText');
+      if (percentText) percentText.textContent = `${percent}%`;
+
+      const counterBadge = document.getElementById('taskCounterBadge');
+      if (counterBadge) counterBadge.textContent = `${completed}/${total} completed`;
+
+      const q1Tasks = dayTasks.filter(t => t.quadrant === 'q1');
+      const q2Tasks = dayTasks.filter(t => t.quadrant === 'q2');
+      const q3Tasks = dayTasks.filter(t => t.quadrant === 'q3');
+      const q4Tasks = dayTasks.filter(t => t.quadrant === 'q4');
+
+      const elQ1 = document.getElementById('q1Count');
+      const elQ2 = document.getElementById('q2Count');
+      const elQ3 = document.getElementById('q3Count');
+      const elQ4 = document.getElementById('q4Count');
+      if (elQ1) elQ1.textContent = q1Tasks.length;
+      if (elQ2) elQ2.textContent = q2Tasks.length;
+      if (elQ3) elQ3.textContent = q3Tasks.length;
+      if (elQ4) elQ4.textContent = q4Tasks.length;
+
+      const advice = document.getElementById('focusAdviceText');
+      if (advice) {
+        if (total === 0) {
+          advice.textContent = 'No tasks yet. Tap "+ Add Task" to schedule your day.';
+        } else if (q1Tasks.some(t => !t.completed)) {
+          advice.textContent = `Focus: You have ${q1Tasks.filter(t => !t.completed).length} pending urgent Q1 task(s).`;
+        } else if (q2Tasks.some(t => !t.completed)) {
+          advice.textContent = 'Q1 is clear! Spend uninterrupted time on Q2 high-leverage goals.';
+        } else if (completed === total) {
+          advice.textContent = 'Great work! All tasks are completed for this day.';
+        } else {
+          advice.textContent = 'Keep momentum and avoid low-impact delegate/eliminate tasks.';
+        }
+      }
+    }
+
+    function renderMatrix() {
+      const quadrants = ['q1', 'q2', 'q3', 'q4'];
+      const dayTasks = state.tasks.filter(t => t.date === state.selectedDate);
+
+      quadrants.forEach(q => {
+        const container = document.getElementById(`list-${q}`);
+        if (!container) return;
+        container.innerHTML = '';
+        const tasks = dayTasks.filter(t => t.quadrant === q);
+
+        if (tasks.length === 0) {
+          container.innerHTML = `
+            <div class="h-full flex flex-col items-center justify-center py-5 text-slate-300 text-center select-none pointer-events-none">
+              <i class="fa-regular fa-folder-open text-xl mb-1 opacity-60"></i>
+              <span class="text-[11px] font-medium">Empty quadrant</span>
+            </div>
+          `;
+          return;
+        }
+
+        tasks.forEach(task => {
+          const card = document.createElement('div');
+          card.setAttribute('draggable', 'true');
+          card.setAttribute('data-id', task.id);
+
+          const isUrgent = task.quadrant === 'q1' && !task.completed;
+          const urgencyClass = isUrgent ? 'urgent-pulse' : '';
+
+          card.className = `group bg-white border border-slate-200 rounded-xl p-2.5 sm:p-3 shadow-xs hover:shadow-sm transition cursor-grab active:cursor-grabbing flex flex-col gap-1.5 ${task.completed ? 'bg-slate-50/70 opacity-60' : ''} ${urgencyClass}`;
+
+          card.addEventListener('dragstart', handleDragStart);
+          card.addEventListener('dragend', handleDragEnd);
+
+          const timeHtml = task.time ? `
+            <span class="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded-md">
+              <i class="fa-regular fa-clock text-[9px] text-slate-400"></i> ${formatTimeDisplay(task.time)}
+            </span>
+          ` : '';
+
+          const reminderHtml = (task.reminder && task.time) ? `
+            <span class="inline-flex items-center gap-1 text-[9px] font-medium text-indigo-600 bg-indigo-50 px-1.5 py-0.5 rounded" title="Alert enabled">
+              <i class="fa-solid fa-bell text-[8px]"></i>
+            </span>
+          ` : '';
+
+          card.innerHTML = `
+            <div class="flex items-start gap-2">
+              <button onclick="toggleTaskCompletion('${task.id}')" class="mt-0.5 w-4 h-4 rounded flex items-center justify-center border transition ${task.completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 hover:border-indigo-500'}">
+                ${task.completed ? '<i class="fa-solid fa-check text-[9px]"></i>' : ''}
+              </button>
+              <div class="flex-1 min-w-0">
+                <p class="text-xs font-semibold text-slate-800 leading-snug break-words ${task.completed ? 'line-through text-slate-400' : ''}">
+                  ${escapeHtml(task.title)}
+                </p>
+                ${task.notes ? `<p class="text-[10px] text-slate-500 mt-0.5 line-clamp-2">${escapeHtml(task.notes)}</p>` : ''}
+              </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-1 border-t border-slate-100 text-[11px] text-slate-400">
+              <div class="flex items-center gap-1 flex-wrap">
+                ${timeHtml}
+                ${reminderHtml}
+              </div>
+              <div class="flex items-center gap-1">
+                <select onchange="moveTaskToQuadrant('${task.id}', this.value)" class="text-[10px] bg-slate-50 border border-slate-200 rounded px-1 py-0.5 text-slate-600 focus:outline-none cursor-pointer">
+                  <option value="q1" ${task.quadrant === 'q1' ? 'selected' : ''}>Q1</option>
+                  <option value="q2" ${task.quadrant === 'q2' ? 'selected' : ''}>Q2</option>
+                  <option value="q3" ${task.quadrant === 'q3' ? 'selected' : ''}>Q3</option>
+                  <option value="q4" ${task.quadrant === 'q4' ? 'selected' : ''}>Q4</option>
+                </select>
+                <button onclick="editTaskModal('${task.id}')" class="p-1 hover:text-indigo-600 rounded">
+                  <i class="fa-solid fa-pen-to-square"></i>
+                </button>
+                <button onclick="deleteTask('${task.id}')" class="p-1 hover:text-rose-600 rounded">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </div>
+            </div>
+          `;
+
+          container.appendChild(card);
+        });
+      });
+    }
+
+    function renderTimeline() {
+      const timelineList = document.getElementById('timelineList');
+      if (!timelineList) return;
+      timelineList.innerHTML = '';
+
+      const dayTasks = state.tasks
+        .filter(t => t.date === state.selectedDate)
+        .sort((a, b) => {
+          if (!a.time) return 1;
+          if (!b.time) return -1;
+          return a.time.localeCompare(b.time);
+        });
+
+      if (dayTasks.length === 0) {
+        timelineList.innerHTML = `
+          <div class="text-center py-8 text-slate-400">
+            <i class="fa-solid fa-calendar-day text-2xl mb-1.5 opacity-50"></i>
+            <p class="text-xs font-medium">No tasks scheduled for this day.</p>
+          </div>
+        `;
+        return;
+      }
+
+      const quadrantBadges = {
+        q1: { text: 'Q1', bg: 'bg-rose-100 text-rose-800 border-rose-200' },
+        q2: { text: 'Q2', bg: 'bg-blue-100 text-blue-800 border-blue-200' },
+        q3: { text: 'Q3', bg: 'bg-amber-100 text-amber-800 border-amber-200' },
+        q4: { text: 'Q4', bg: 'bg-slate-100 text-slate-800 border-slate-200' }
+      };
+
+      dayTasks.forEach(task => {
+        const item = document.createElement('div');
+        item.className = 'relative flex items-start gap-3';
+        const qInfo = quadrantBadges[task.quadrant] || quadrantBadges.q2;
+        const timeDisplay = task.time ? formatTimeDisplay(task.time) : 'No time set';
+
+        item.innerHTML = `
+          <div class="absolute -left-6 top-1 w-3.5 h-3.5 rounded-full border-2 border-white ${task.completed ? 'bg-emerald-500' : 'bg-indigo-600'} shadow-xs"></div>
+
+          <div class="flex-1 bg-slate-50 border border-slate-200/80 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 hover:bg-white transition">
+            <div class="flex items-start gap-2.5">
+              <button onclick="toggleTaskCompletion('${task.id}')" class="mt-0.5 w-4 h-4 rounded flex items-center justify-center border transition ${task.completed ? 'bg-emerald-500 border-emerald-500 text-white' : 'border-slate-300 hover:border-indigo-500'}">
+                ${task.completed ? '<i class="fa-solid fa-check text-[9px]"></i>' : ''}
+              </button>
+              <div>
+                <div class="flex items-center gap-1.5 flex-wrap">
+                  <h4 class="text-xs font-bold text-slate-800 ${task.completed ? 'line-through text-slate-400' : ''}">${escapeHtml(task.title)}</h4>
+                  <span class="text-[9px] font-bold px-1.5 py-0.5 rounded-full border ${qInfo.bg}">${qInfo.text}</span>
+                </div>
+                ${task.notes ? `<p class="text-[10px] text-slate-500 mt-0.5">${escapeHtml(task.notes)}</p>` : ''}
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2.5 text-xs text-slate-500 self-end sm:self-center">
+              <span class="font-semibold text-slate-700 flex items-center gap-1 text-[11px]">
+                <i class="fa-regular fa-clock text-indigo-500"></i> ${timeDisplay}
+              </span>
+              <button onclick="editTaskModal('${task.id}')" class="hover:text-indigo-600 p-1">
+                <i class="fa-solid fa-pen-to-square"></i>
+              </button>
+              <button onclick="deleteTask('${task.id}')" class="hover:text-rose-600 p-1">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
+          </div>
+        `;
+        timelineList.appendChild(item);
+      });
+    }
+
+    function escapeHtml(text) {
+      if (!text) return '';
+      return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    /* Modal Controllers */
+    function openNewTaskModal(defaultQuadrant = 'q2') {
+      try {
+        unlockAudio();
+      } catch (e) {}
+
+      const modal = document.getElementById('taskModal');
+      const form = document.getElementById('taskForm');
+      const titleElem = document.getElementById('modalTitle');
+      const editId = document.getElementById('editTaskId');
+      const titleInput = document.getElementById('taskTitleInput');
+      const dateInput = document.getElementById('taskDateInput');
+      const timeInput = document.getElementById('taskTimeInput');
+      const reminderToggle = document.getElementById('taskReminderToggle');
+      const offsetSelect = document.getElementById('reminderOffsetSelect');
+      const notesInput = document.getElementById('taskNotesInput');
+
+      if (form) form.reset();
+      if (titleElem) titleElem.textContent = 'Add New Task';
+      if (editId) editId.value = '';
+      if (titleInput) titleInput.value = '';
+      if (notesInput) notesInput.value = '';
+      if (dateInput) dateInput.value = state.selectedDate || getTodayString();
+
+      const now = new Date();
+      now.setHours(now.getHours() + 1, 0, 0, 0);
+      const hh = String(now.getHours()).padStart(2, '0');
+      const mm = String(now.getMinutes()).padStart(2, '0');
+      if (timeInput) timeInput.value = `${hh}:${mm}`;
+
+      const radio = document.querySelector(`input[name="quadrantRadio"][value="${defaultQuadrant}"]`);
+      if (radio) {
+        radio.checked = true;
+      } else {
+        const firstRadio = document.querySelector('input[name="quadrantRadio"]');
+        if (firstRadio) firstRadio.checked = true;
+      }
+
+      if (reminderToggle) reminderToggle.checked = true;
+      if (offsetSelect) offsetSelect.value = "0";
+
+      if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      }
+
+      if (titleInput) {
+        setTimeout(() => {
+          try { titleInput.focus(); } catch (e) {}
+        }, 100);
+      }
+    }
+
+    function editTaskModal(taskId) {
+      const task = state.tasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      const modal = document.getElementById('taskModal');
+      document.getElementById('modalTitle').textContent = 'Edit Task';
+      document.getElementById('editTaskId').value = task.id;
+      document.getElementById('taskTitleInput').value = task.title;
+      document.getElementById('taskDateInput').value = task.date;
+      document.getElementById('taskTimeInput').value = task.time || '';
+      document.getElementById('taskNotesInput').value = task.notes || '';
+      document.getElementById('taskReminderToggle').checked = !!task.reminder;
+      document.getElementById('reminderOffsetSelect').value = String(task.reminderOffset || 0);
+
+      const radio = document.querySelector(`input[name="quadrantRadio"][value="${task.quadrant}"]`);
+      if (radio) radio.checked = true;
+
+      if (modal) {
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+      }
+
+      setTimeout(() => {
+        try { document.getElementById('taskTitleInput').focus(); } catch (e) {}
+      }, 100);
+    }
+
+    function closeTaskModal() {
+      const modal = document.getElementById('taskModal');
+      if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+      }
+      const form = document.getElementById('taskForm');
+      if (form) form.reset();
+    }
+
+    function setupTaskFormListener() {
+      const taskForm = document.getElementById('taskForm');
+      if (!taskForm) return;
+
+      taskForm.onsubmit = function(e) {
+        e.preventDefault();
+        const editId = document.getElementById('editTaskId')?.value;
+        const title = document.getElementById('taskTitleInput')?.value.trim();
+        const quadrant = (document.querySelector('input[name="quadrantRadio"]:checked')?.value) || 'q2';
+        const date = document.getElementById('taskDateInput')?.value || state.selectedDate;
+        const time = document.getElementById('taskTimeInput')?.value || '';
+        const notes = document.getElementById('taskNotesInput')?.value.trim() || '';
+        const reminder = document.getElementById('taskReminderToggle')?.checked ?? true;
+        const reminderOffset = parseInt(document.getElementById('reminderOffsetSelect')?.value || 0, 10);
+
+        if (!title) return;
+
+        if (editId) {
+          updateTask(editId, { title, quadrant, date, time, notes, reminder, reminderOffset });
+        } else {
+          addTask({ title, quadrant, date, time, notes, reminder, reminderOffset });
+        }
+
+        closeTaskModal();
+      };
+    }
+
+    /* AI Classifier */
+    function openAiModal() {
+      try {
+        unlockAudio();
+      } catch (e) {}
+      const aiPromptInput = document.getElementById('aiPromptInput');
+      const aiLoadingIndicator = document.getElementById('aiLoadingIndicator');
+      const aiModal = document.getElementById('aiModal');
+
+      if (aiPromptInput) aiPromptInput.value = '';
+      if (aiLoadingIndicator) aiLoadingIndicator.classList.add('hidden');
+      if (aiModal) {
+        aiModal.classList.remove('hidden');
+        aiModal.classList.add('flex');
+      }
+      setTimeout(() => {
+        try { aiPromptInput?.focus(); } catch (e) {}
+      }, 100);
+    }
+
+    function closeAiModal() {
+      const aiModal = document.getElementById('aiModal');
+      if (aiModal) {
+        aiModal.classList.add('hidden');
+        aiModal.classList.remove('flex');
+      }
+    }
+
+    async function handleAiPrioritize() {
+      const aiPromptInput = document.getElementById('aiPromptInput');
+      const aiLoadingIndicator = document.getElementById('aiLoadingIndicator');
+      const aiAnalyzeBtn = document.getElementById('aiAnalyzeBtn');
+
+      const text = aiPromptInput?.value.trim();
+      if (!text) {
+        showToast('Input Required', 'Please enter task details.', 'amber');
+        return;
+      }
+
+      if (aiLoadingIndicator) aiLoadingIndicator.classList.remove('hidden');
+      if (aiAnalyzeBtn) aiAnalyzeBtn.disabled = true;
+
+      const systemPrompt = `You are a productivity strategist using the Eisenhower Matrix.
+Categorize into one: "q1" (urgent & important), "q2" (schedule/important), "q3" (delegate/urgent not important), "q4" (drop/neither).
+Extract title, inferred time (HH:MM 24h format, default "14:00"), and short 1-sentence reason.`;
+
+      const apiKey = "";
+      const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+
+      const payload = {
+        contents: [{ role: 'user', parts: [{ text: `Classify: "${text}"` }] }],
+        systemInstruction: { parts: [{ text: systemPrompt }] },
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: "OBJECT",
+            properties: {
+              title: { type: "STRING" },
+              quadrant: { type: "STRING", enum: ["q1", "q2", "q3", "q4"] },
+              time: { type: "STRING" },
+              reason: { type: "STRING" }
+            },
+            required: ["title", "quadrant", "reason"]
+          }
+        }
+      };
+
+      try {
+        const response = await fetch(apiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) throw new Error('API response failed');
+
+        const data = await response.json();
+        const jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+        const parsed = JSON.parse(jsonText);
+
+        addTask({
+          title: parsed.title || text,
+          quadrant: parsed.quadrant || 'q2',
+          date: state.selectedDate,
+          time: parsed.time || '14:00',
+          reminder: true,
+          reminderOffset: 0,
+          notes: parsed.reason || 'AI Classified'
+        });
+
+        closeAiModal();
+        showToast('Task Created', `Categorized into ${parsed.quadrant.toUpperCase()}`, 'emerald');
+      } catch (err) {
+        const lower = text.toLowerCase();
+        let fallbackQ = 'q2';
+        if (lower.includes('urgent') || lower.includes('asap') || lower.includes('emergency')) fallbackQ = 'q1';
+        else if (lower.includes('email') || lower.includes('call') || lower.includes('buy')) fallbackQ = 'q3';
+
+        addTask({
+          title: text,
+          quadrant: fallbackQ,
+          date: state.selectedDate,
+          time: '12:00',
+          reminder: true,
+          reminderOffset: 0,
+          notes: 'Added via Smart Mode'
+        });
+
+        closeAiModal();
+        showToast('Task Added', `Categorized into ${fallbackQ.toUpperCase()}`, 'indigo');
+      } finally {
+        if (aiLoadingIndicator) aiLoadingIndicator.classList.add('hidden');
+        if (aiAnalyzeBtn) aiAnalyzeBtn.disabled = false;
+      }
+    }
+
+    function switchView(view) {
+      state.activeView = view;
+      const matrixContainer = document.getElementById('matrixContainer');
+      const timelineContainer = document.getElementById('timelineContainer');
+      const viewMatrixBtn = document.getElementById('viewMatrixBtn');
+      const viewTimelineBtn = document.getElementById('viewTimelineBtn');
+      const mobileViewMatrixBtn = document.getElementById('mobileViewMatrixBtn');
+      const mobileViewTimelineBtn = document.getElementById('mobileViewTimelineBtn');
+
+      if (view === 'matrix') {
+        if (matrixContainer) matrixContainer.classList.remove('hidden');
+        if (timelineContainer) timelineContainer.classList.add('hidden');
+        if (viewMatrixBtn) viewMatrixBtn.className = 'px-3 py-1 rounded-lg bg-white text-slate-800 shadow-xs font-semibold transition';
+        if (viewTimelineBtn) viewTimelineBtn.className = 'px-3 py-1 rounded-lg hover:text-slate-900 transition text-slate-600';
+        if (mobileViewMatrixBtn) mobileViewMatrixBtn.className = 'flex flex-col items-center gap-1 text-indigo-600';
+        if (mobileViewTimelineBtn) mobileViewTimelineBtn.className = 'flex flex-col items-center gap-1 text-slate-400';
+      } else {
+        if (matrixContainer) matrixContainer.classList.add('hidden');
+        if (timelineContainer) timelineContainer.classList.remove('hidden');
+        renderTimeline();
+        if (viewTimelineBtn) viewTimelineBtn.className = 'px-3 py-1 rounded-lg bg-white text-slate-800 shadow-xs font-semibold transition';
+        if (viewMatrixBtn) viewMatrixBtn.className = 'px-3 py-1 rounded-lg hover:text-slate-900 transition text-slate-600';
+        if (mobileViewTimelineBtn) mobileViewTimelineBtn.className = 'flex flex-col items-center gap-1 text-indigo-600';
+        if (mobileViewMatrixBtn) mobileViewMatrixBtn.className = 'flex flex-col items-center gap-1 text-slate-400';
+      }
+    }
+
+    /* Expose functions to global scope so inline onclick handlers always work reliably */
+    window.openNewTaskModal = openNewTaskModal;
+    window.editTaskModal = editTaskModal;
+    window.closeTaskModal = closeTaskModal;
+    window.openAiModal = openAiModal;
+    window.closeAiModal = closeAiModal;
+    window.handleAiPrioritize = handleAiPrioritize;
+    window.switchView = switchView;
+    window.toggleSound = toggleSound;
+    window.testNotificationAlert = testNotificationAlert;
+    window.requestNotificationPermission = requestNotificationPermission;
+    window.changeDate = changeDate;
+    window.setToday = setToday;
+    window.toggleTaskCompletion = toggleTaskCompletion;
+    window.deleteTask = deleteTask;
+    window.moveTaskToQuadrant = moveTaskToQuadrant;
+    window.markTaskDoneFromToast = markTaskDoneFromToast;
+    window.snoozeTask = snoozeTask;
+
+    /* Setup Event Listeners & Initialize */
+    function setupEventListeners() {
+      const dateInput = document.getElementById('currentDateInput');
+      if (dateInput) {
+        dateInput.addEventListener('change', (e) => {
+          state.selectedDate = e.target.value;
+          renderAll();
+        });
+      }
+
+      setupTaskFormListener();
+
+      // Backdrop click dismiss for modals
+      const taskModal = document.getElementById('taskModal');
+      if (taskModal) {
+        taskModal.addEventListener('click', (e) => {
+          if (e.target === taskModal) closeTaskModal();
+        });
+      }
+
+      const aiModal = document.getElementById('aiModal');
+      if (aiModal) {
+        aiModal.addEventListener('click', (e) => {
+          if (e.target === aiModal) closeAiModal();
+        });
+      }
+
+      // Escape key dismiss
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeTaskModal();
+          closeAiModal();
+        }
+      });
+
+      // Mobile touch audio unlock
+      window.addEventListener('touchstart', unlockAudio, { passive: true });
+      window.addEventListener('touchend', unlockAudio, { passive: true });
+      window.addEventListener('click', unlockAudio, { passive: true });
+    }
+
+    function initApp() {
+      loadStorage();
+      setupEventListeners();
+      initDropZones();
+      checkNotificationPermission();
+      renderAll();
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initApp);
+    } else {
+      initApp();
+    }
+  </script>
+</body>
+</html>
+```
