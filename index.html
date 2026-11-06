@@ -132,6 +132,11 @@
           <i id="audioMuteIcon" class="fa-solid fa-volume-high text-indigo-600"></i>
         </button>
 
+        <!-- Screen Wake Lock Toggle (Keeps phone screen awake during focus) -->
+        <button id="wakeLockBtn" onclick="toggleWakeLock()" class="p-2 sm:p-2.5 rounded-xl text-xs font-semibold border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition shadow-xs" title="Keep screen awake during focus">
+          <i id="wakeLockIcon" class="fa-regular fa-sun text-slate-500"></i>
+        </button>
+
         <!-- View Switcher (Desktop Header) -->
         <div class="hidden md:flex bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs font-medium text-slate-600">
           <button id="viewMatrixBtn" onclick="switchView('matrix')" class="px-3 py-1 rounded-lg bg-white text-slate-800 shadow-xs font-semibold transition">
@@ -806,14 +811,135 @@
       }
     }
 
-    function showNativeNotification(title, options = {}) {
-      if ('Notification' in window && Notification.permission === 'granted') {
+    /* Mobile-Safe Notification Dispatcher */
+    async function showNativeNotification(title, options = {}) {
+      if (!('Notification' in window) || Notification.permission !== 'granted') return;
+
+      const defaultOptions = {
+        icon: 'https://placehold.co/192x192/4f46e5/ffffff?text=FG',
+        badge: 'https://placehold.co/96x96/4f46e5/ffffff?text=FG',
+        vibrate: [200, 100, 200],
+        ...options
+      };
+
+      // 1. Try ServiceWorkerRegistration.showNotification first (Mandatory on Android Chrome and iOS Home Screen PWA)
+      if ('serviceWorker' in navigator) {
         try {
-          new Notification(title, options);
-        } catch (e) {
-          console.warn('Native notification instantiation error:', e);
+          const reg = await navigator.serviceWorker.getRegistration();
+          if (reg && reg.showNotification) {
+            await reg.showNotification(title, defaultOptions);
+            return;
+          }
+        } catch (swErr) {
+          console.debug('ServiceWorker showNotification issue:', swErr);
         }
       }
+
+      // 2. Fallback to classic Notification constructor (Desktop / Supported browsers)
+      try {
+        new Notification(title, defaultOptions);
+      } catch (err) {
+        // Catches Chrome Android "TypeError: Illegal constructor"
+        console.debug('Direct Notification constructor restricted on this platform:', err);
+      }
+    }
+
+    /* Screen Wake Lock API (Keeps Phone Awake During Focus Sessions) */
+    let wakeLockSentinel = null;
+    async function toggleWakeLock() {
+      if (!('wakeLock' in navigator)) {
+        showToast('Wake Lock Unsupported', 'Your browser does not support keeping the screen awake.', 'amber');
+        return;
+      }
+      const btn = document.getElementById('wakeLockBtn');
+      const icon = document.getElementById('wakeLockIcon');
+
+      if (wakeLockSentinel) {
+        try {
+          await wakeLockSentinel.release();
+        } catch (e) {}
+        wakeLockSentinel = null;
+        if (btn) btn.className = 'p-2 sm:p-2.5 rounded-xl text-xs font-semibold border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition shadow-xs';
+        if (icon) icon.className = 'fa-regular fa-sun text-slate-500';
+        showToast('Screen Sleep Restored', 'Standard screen timeout restored.', 'slate');
+      } else {
+        try {
+          wakeLockSentinel = await navigator.wakeLock.request('screen');
+          if (btn) btn.className = 'p-2 sm:p-2.5 rounded-xl text-xs font-semibold border border-amber-300 bg-amber-50 text-amber-700 transition shadow-xs';
+          if (icon) icon.className = 'fa-solid fa-sun text-amber-500 animate-pulse';
+          showToast('Keep Screen Awake: ON', 'Screen will stay on during your planning session.', 'emerald');
+
+          wakeLockSentinel.addEventListener('release', () => {
+            wakeLockSentinel = null;
+            if (btn) btn.className = 'p-2 sm:p-2.5 rounded-xl text-xs font-semibold border border-slate-200 bg-white text-slate-600 hover:bg-slate-50 transition shadow-xs';
+            if (icon) icon.className = 'fa-regular fa-sun text-slate-500';
+          });
+        } catch (err) {
+          showToast('Wake Lock Active', 'Could not keep screen awake.', 'rose');
+        }
+      }
+    }
+
+    /* Native Calendar Alarm Export (.ics for iOS Reminders / Android Calendar) */
+    function exportTaskToIcs(taskId) {
+      const task = state.tasks.find(t => t.id === taskId);
+      if (!task) return;
+
+      const title = task.title || 'FocusGrid Task';
+      const notes = task.notes || `Eisenhower ${task.quadrant.toUpperCase()} Task`;
+      const dateStr = task.date || getTodayString();
+      const timeStr = task.time || '12:00';
+
+      const parts = dateStr.split('-').map(Number);
+      const timeParts = timeStr.split(':').map(Number);
+      const startDate = new Date(parts[0], parts[1] - 1, parts[2], timeParts[0], timeParts[1]);
+      const endDate = new Date(startDate.getTime() + 30 * 60 * 1000);
+
+      const formatIcsDate = (d) => {
+        return d.getFullYear() +
+          String(d.getMonth() + 1).padStart(2, '0') +
+          String(d.getDate()).padStart(2, '0') + 'T' +
+          String(d.getHours()).padStart(2, '0') +
+          String(d.getMinutes()).padStart(2, '0') + '00';
+      };
+
+      const dtStart = formatIcsDate(startDate);
+      const dtEnd = formatIcsDate(endDate);
+      const offset = parseInt(task.reminderOffset || 0, 10);
+
+      const icsLines = [
+        'BEGIN:VCALENDAR',
+        'VERSION:2.0',
+        'PRODID:-//FocusGrid//Eisenhower Planner//EN',
+        'CALSCALE:GREGORIAN',
+        'BEGIN:VEVENT',
+        `UID:task_${task.id}@focusgrid.app`,
+        `DTSTAMP:${formatIcsDate(new Date())}`,
+        `DTSTART:${dtStart}`,
+        `DTEND:${dtEnd}`,
+        `SUMMARY:[${task.quadrant.toUpperCase()}] ${title.replace(/[,;]/g, ' ')}`,
+        `DESCRIPTION:${notes.replace(/[\n\r]/g, ' ')}`,
+        'STATUS:CONFIRMED',
+        'BEGIN:VALARM',
+        `TRIGGER:-PT${offset}M`,
+        'ACTION:DISPLAY',
+        `DESCRIPTION:Reminder: ${title.replace(/[,;]/g, ' ')}`,
+        'END:VALARM',
+        'END:VEVENT',
+        'END:VCALENDAR'
+      ].join('\r\n');
+
+      const blob = new Blob([icsLines], { type: 'text/calendar;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.ics`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      showToast('Synced to Phone Calendar', 'Opening in Calendar app for 100% reliable lock-screen alarms.', 'emerald');
     }
 
     function showToast(title, message, tone = 'indigo', actionTask = null) {
@@ -897,7 +1023,7 @@
     }
 
     /* Background Scheduler Check */
-    function checkScheduledTasks() {
+    function checkScheduledTasks(isWakeCatchup = false) {
       const now = new Date();
       const currentDateStr = getTodayString();
       const currentHours = now.getHours();
@@ -911,7 +1037,12 @@
           const offset = parseInt(task.reminderOffset || 0, 10);
           const targetTriggerMinutes = taskTotalMinutes - offset;
 
-          if (currentTotalMinutes >= targetTriggerMinutes && currentTotalMinutes <= targetTriggerMinutes + 5) {
+          // If wake-up catch-up: check any task that came due while minimized; otherwise check 5m window
+          const isDue = isWakeCatchup
+            ? currentTotalMinutes >= targetTriggerMinutes
+            : (currentTotalMinutes >= targetTriggerMinutes && currentTotalMinutes <= targetTriggerMinutes + 5);
+
+          if (isDue) {
             triggerTaskNotification(task);
             task.notified = true;
             saveStorage();
@@ -1181,6 +1312,9 @@
                 ${reminderHtml}
               </div>
               <div class="flex items-center gap-1">
+                <button onclick="exportTaskToIcs('${task.id}')" class="p-1 text-slate-400 hover:text-indigo-600 rounded" title="Sync to Phone Lock-Screen Alarm (.ics)">
+                  <i class="fa-regular fa-calendar-plus text-xs"></i>
+                </button>
                 <select onchange="moveTaskToQuadrant('${task.id}', this.value)" class="text-[10px] bg-slate-50 border border-slate-200 rounded px-1 py-0.5 text-slate-600 focus:outline-none cursor-pointer">
                   <option value="q1" ${task.quadrant === 'q1' ? 'selected' : ''}>Q1</option>
                   <option value="q2" ${task.quadrant === 'q2' ? 'selected' : ''}>Q2</option>
@@ -1259,6 +1393,9 @@
               <span class="font-semibold text-slate-700 flex items-center gap-1 text-[11px]">
                 <i class="fa-regular fa-clock text-indigo-500"></i> ${timeDisplay}
               </span>
+              <button onclick="exportTaskToIcs('${task.id}')" class="hover:text-indigo-600 p-1" title="Sync to Phone Alarm (.ics)">
+                <i class="fa-regular fa-calendar-plus"></i>
+              </button>
               <button onclick="editTaskModal('${task.id}')" class="hover:text-indigo-600 p-1">
                 <i class="fa-solid fa-pen-to-square"></i>
               </button>
@@ -1546,6 +1683,8 @@ Extract title, inferred time (HH:MM 24h format, default "14:00"), and short 1-se
     window.handleAiPrioritize = handleAiPrioritize;
     window.switchView = switchView;
     window.toggleSound = toggleSound;
+    window.toggleWakeLock = toggleWakeLock;
+    window.exportTaskToIcs = exportTaskToIcs;
     window.testNotificationAlert = testNotificationAlert;
     window.requestNotificationPermission = requestNotificationPermission;
     window.changeDate = changeDate;
@@ -1567,6 +1706,16 @@ Extract title, inferred time (HH:MM 24h format, default "14:00"), and short 1-se
       }
 
       setupTaskFormListener();
+
+      // Catch up on missed alerts when switching back from minimized or waking phone screen
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+          checkScheduledTasks(true);
+        }
+      });
+      window.addEventListener('focus', () => {
+        checkScheduledTasks(true);
+      });
 
       // Backdrop click dismiss for modals
       const taskModal = document.getElementById('taskModal');
@@ -1602,6 +1751,14 @@ Extract title, inferred time (HH:MM 24h format, default "14:00"), and short 1-se
       setupEventListeners();
       initDropZones();
       checkNotificationPermission();
+
+      // Register companion service worker if sw.js is hosted on GitHub Pages
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('./sw.js').catch(() => {
+          // Graceful fallback if sw.js is not present
+        });
+      }
+
       renderAll();
     }
 
